@@ -1,0 +1,16 @@
+name: email-triage
+version: 0.1
+description: OpenEnv environment for email triage
+entrypoint: app.main:app
+
+tasks:
+  - id: easy
+    description: Spam vs non-spam
+  - id: medium
+    description: Urgent vs informational
+  - id: hard
+    description: Full triage
+
+observation_schema: Observation
+action_schema: Action
+reward_schema: Reward
