@@ -378,10 +378,4 @@ Contributions welcome! Please:
 
 ---
 
-## 📧 Contact
 
-For questions or issues, please open a GitHub issue or contact the maintainers.
-
----
-
-**Built with ❤️ for OpenEnv Hackathon Round 1**
