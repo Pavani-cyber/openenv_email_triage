@@ -12,11 +12,11 @@ app = FastAPI(
 
 # Initialize environment and load pre-trained model
 try:
-    env = EmailTriageEnv()
+    env = EmailTriageEnv("data/sample_emails.json")
     model = PPO.load("ppo_email_triage")
-except FileNotFoundError:
-    print("Warning: Model not found. Training a new model...")
-    env = EmailTriageEnv()
+except Exception as e:
+    print("Warning: Model not loaded:", e)
+    env = EmailTriageEnv("data/sample_emails.json")
     model = None
 
 current_obs = None
@@ -58,16 +58,19 @@ def health():
     return {"status": "healthy"}
 
 
-@app.get("/reset")
+# ✅ IMPORTANT: MUST BE POST FOR OPENENV CHECKER
+@app.post("/reset")
 def reset():
     global current_obs, current_email
     obs, info = env.reset()
     current_obs = obs
     current_email = env.emails[env.index]
-    
+
     return {
-        "status": "reset",
         "observation": get_obs_dict(obs),
+        "reward": 0.0,
+        "done": False,
+        "info": {},
         "email_preview": {
             "sender_domain": current_email.get("sender_domain"),
             "subject": current_email.get("subject"),
@@ -79,21 +82,21 @@ def reset():
 @app.get("/agent-step")
 def agent_step():
     global current_obs, current_email
-    
+
     if current_obs is None:
         obs, _ = env.reset()
         current_obs = obs
         current_email = env.emails[env.index]
-    
+
     if model is None:
         return {"error": "Model not trained yet"}
-    
+
     action, _ = model.predict(current_obs)
     obs, reward, terminated, truncated, info = env.step(int(action))
-    
+
     current_obs = obs
     current_email = env.emails[env.index]
-    
+
     return {
         "action": int(action),
         "action_label": LABELS[int(action)],
@@ -116,23 +119,25 @@ class ActionInput(BaseModel):
 @app.post("/step")
 def manual_step(data: ActionInput):
     global current_obs, current_email
-    
+
     if current_obs is None:
         obs, _ = env.reset()
         current_obs = obs
         current_email = env.emails[env.index]
-    
+
     obs, reward, terminated, truncated, info = env.step(data.action)
     current_obs = obs
     current_email = env.emails[env.index]
-    
+
     return {
+        "observation": get_obs_dict(obs),
+        "reward": float(reward),
+        "done": bool(terminated or truncated),
+        "info": info,
         "action": data.action,
         "action_label": LABELS[data.action],
-        "reward": float(reward),
         "is_correct": info.get("is_correct", False),
         "correct_label": info.get("correct_label"),
-        "observation": get_obs_dict(obs),
         "email_preview": {
             "sender_domain": current_email.get("sender_domain"),
             "subject": current_email.get("subject"),
