@@ -143,7 +143,10 @@ def manual_action(action_idx):
 # ==========================
 # GRADIO UI
 # ==========================
-with gr.Blocks(title="Email Triage OpenEnv") as demo:
+with gr.Blocks(
+    title="Email Triage OpenEnv",
+    theme=gr.themes.Soft()
+) as demo:
     gr.Markdown("# 📧 Email Triage OpenEnv")
     gr.Markdown(
         "RL-powered intelligent email classification demo built for "
@@ -206,13 +209,12 @@ with gr.Blocks(title="Email Triage OpenEnv") as demo:
 """
     )
 
+
 # ==========================
 # RUN SERVER
 # ==========================
 if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
-        server_port=7860,
-        share=True,
-        theme=gr.themes.Soft()
+        server_port=7860
     )
