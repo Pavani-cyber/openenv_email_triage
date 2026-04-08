@@ -1,14 +1,16 @@
 # 📧 Email Triage OpenEnv
 
-An intelligent **Reinforcement Learning environment** for email triage classification, built with OpenEnv framework for the **Meta × PyTorch OpenEnv Hackathon**.
+An intelligent **multi-modal environment** for email triage classification, supporting both Reinforcement Learning and Large Language Models, built with OpenEnv framework for the **Meta × PyTorch OpenEnv Hackathon**.
 
 **🎯 Key Features:**
 
-- ✅ Offline-first design (no cloud dependencies)
-- ✅ Trained PPO agent for email classification
+- ✅ **Dual Inference Modes**: RL (PPO) and LLM-based classification
+- ✅ **Offline-first design** (works with local LLM servers)
+- ✅ **OpenEnv Framework** compliant
 - ✅ Interactive Gradio demo on Hugging Face Spaces
 - ✅ FastAPI backend for programmatic access
 - ✅ Docker-ready for easy deployment
+- ✅ Resource-efficient (2 vCPUs, 8 GB RAM)
 
 ---
 
@@ -83,15 +85,16 @@ openenv_project/
 ├── data/
 │   ├── sample_emails.json       # Training data
 │   └── test_emails.json         # Test data
+├── inference.py                 # LLM-based inference (main script)
+├── validate.py                  # Environment validation
 ├── app_gradio.py                # Gradio demo interface
-├── train.py                     # Training script
-├── evaluate.py                  # Evaluation script
-├── validate.py                  # Validation script
+├── train.py                     # RL training script
+├── evaluate.py                  # RL evaluation script
 ├── test_agent.py                # Agent testing
 ├── requirements.txt             # Python dependencies
 ├── Dockerfile                   # Container configuration
-├── demo.py                      # demo
 ├── openenv.yaml                 # OpenEnv framework config
+├── .env.example                 # Environment variables template
 └── README.md                    # This file
 ```
 
@@ -200,6 +203,81 @@ Then visit:
 - `GET /reset` - Reset environment
 - `GET /agent-step` - Agent takes an action
 - `POST /step` - Manual action with `{"action": 0-4}`
+
+---
+
+## 🤖 LLM Inference (Alternative Mode)
+
+This project supports **Large Language Model-based inference** as an alternative to RL agents. The `inference.py` script uses OpenAI-compatible APIs for intelligent email classification.
+
+### Environment Variables
+
+Create a `.env` file (copy from `.env.example`):
+
+```bash
+# OpenAI-compatible API base URL
+API_BASE_URL=http://localhost:8000/v1  # Local LLM server
+# API_BASE_URL=https://api.openai.com/v1  # OpenAI API
+
+# Model name
+MODEL_NAME=gpt-3.5-turbo  # or llama2:7b, mistral:7b, etc.
+
+# Hugging Face token (required)
+HF_TOKEN=your_huggingface_token_here
+```
+
+### Usage
+
+#### Validate Environment
+
+```bash
+python inference.py --validate-only
+```
+
+#### Classify Single Email
+
+```bash
+# Using JSON string
+python inference.py --email '{"subject": "Urgent: Meeting at 3 PM", "body": "Please join the team meeting", "sender_domain": "company.com"}'
+
+# Using JSON file
+echo '{"subject": "Test email", "body": "This is a test", "sender_domain": "example.com"}' > email.json
+python inference.py --input-file email.json
+```
+
+#### Offline Execution
+
+For offline execution, configure `API_BASE_URL` to point to a local LLM server:
+
+- **Ollama**: `http://localhost:11434/v1`
+- **Local OpenAI-compatible API**: `http://localhost:8000/v1`
+- **vLLM**: `http://localhost:8000/v1`
+
+### Output Format
+
+```json
+{
+  "action": 1,
+  "label": "urgent",
+  "observation": {
+    "spam_score": 0.0,
+    "urgent_score": 0.8,
+    "informational_score": 0.1,
+    "followup_score": 0.1,
+    "archive_score": 0.0,
+    "thread_depth": 0.0,
+    "subject_length": 0.2,
+    "body_length": 0.3,
+    "has_exclamation": false,
+    "has_question": false,
+    "timestamp_norm": 0.5
+  },
+  "email": {...},
+  "model": "gpt-3.5-turbo",
+  "api_base": "http://localhost:8000/v1",
+  "framework": "OpenEnv"
+}
+```
 
 ---
 
@@ -377,5 +455,3 @@ Contributions welcome! Please:
 3. Submit a pull request
 
 ---
-
-

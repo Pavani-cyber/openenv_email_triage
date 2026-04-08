@@ -31,9 +31,9 @@ EXPOSE 7860
 # Health check
 # ==========================
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import os; exit(0 if os.path.exists('ppo_email_triage.zip') else 1)"
+    CMD python -c "import os; exit(0 if os.path.exists('inference.py') else 1)"
 
 # ==========================
-# Run app
+# Run inference script
 # ==========================
-CMD ["python", "app_gradio.py"]
+CMD ["python", "inference.py", "--validate-only"]
