@@ -59,6 +59,7 @@ def health():
 
 
 @app.get("/reset")
+@app.post("/reset")
 def reset():
     global current_obs, current_email
     obs, info = env.reset()

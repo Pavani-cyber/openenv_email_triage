@@ -208,13 +208,13 @@ Then visit:
 ### Build Image
 
 ```bash
-docker build -t email-triage-env:latest .
+docker build -t email-triage-app .
 ```
 
 ### Run Locally
 
 ```bash
-docker run -p 7860:7860 email-triage-env:latest
+docker run -p 7860:7860 email-triage-app
 ```
 
 Visit `http://localhost:7860`
@@ -230,7 +230,7 @@ Visit `http://localhost:7860`
 
    ```bash
    # Inside your Space repository
-   git clone https://huggingface.co/spaces/YOUR_USERNAME/email-triage-env
+   git clone https://huggingface.co/spaces/pagadala-pavani/email-env
    cd email-triage-env
 
    # Copy files (except .git)
