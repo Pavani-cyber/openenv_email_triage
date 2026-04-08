@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import argparse
 import json
 from pathlib import Path
@@ -65,3 +66,12 @@ if __name__ == "__main__":
         "email": email
     }
     print(json.dumps(output, indent=2))
+=======
+# inference.py
+import requests
+
+BASE_URL = "http://localhost:7860"
+
+r = requests.post(f"{BASE_URL}/reset")
+print(r.json())
+>>>>>>> 1e141989b6360ae9b8ffd12b4be9fa3023103171
