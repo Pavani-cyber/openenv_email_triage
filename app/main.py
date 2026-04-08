@@ -58,6 +58,40 @@ def health():
     return {"status": "healthy"}
 
 
+@app.get("/actions")
+def get_actions():
+    """Get available actions in the environment"""
+    return {
+        "actions": [
+            {"id": i, "name": label, "description": f"Classify email as {label}"}
+            for i, label in enumerate(LABELS)
+        ],
+        "action_space": {
+            "type": "Discrete",
+            "n": len(LABELS)
+        }
+    }
+
+
+@app.get("/state")
+def get_state():
+    """Get current environment state"""
+    if current_obs is None:
+        return {
+            "status": "not_initialized",
+            "message": "Environment not reset yet. Call /reset first."
+        }
+
+    return {
+        "observation": get_obs_dict(current_obs),
+        "email_preview": {
+            "sender_domain": current_email.get("sender_domain") if current_email else None,
+            "subject": current_email.get("subject") if current_email else None,
+            "label": current_email.get("label") if current_email else None
+        } if current_email else None
+    }
+
+
 @app.get("/reset")
 @app.post("/reset")
 def reset():
@@ -67,6 +101,7 @@ def reset():
     current_email = env.emails[env.index]
 
     return {
+        "status": "reset",
         "observation": get_obs_dict(obs),
         "reward": 0.0,
         "done": False,

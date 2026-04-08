@@ -199,9 +199,12 @@ Then visit:
 
 **Available endpoints:**
 
-- `GET /` - Health check
-- `GET /reset` - Reset environment
-- `GET /agent-step` - Agent takes an action
+- `GET /` - Health check and environment info
+- `GET /actions` - Get available actions and action space
+- `GET /state` - Get current environment state/observation
+- `GET /reset` - Reset environment (also supports POST)
+- `POST /reset` - Reset environment
+- `GET /agent-step` - Agent takes an action using trained model
 - `POST /step` - Manual action with `{"action": 0-4}`
 
 ---
