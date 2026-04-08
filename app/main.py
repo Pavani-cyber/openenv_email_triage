@@ -58,11 +58,7 @@ def health():
     return {"status": "healthy"}
 
 
-<<<<<<< HEAD
 @app.get("/reset")
-=======
-# ✅ IMPORTANT: MUST BE POST FOR OPENENV CHECKER
->>>>>>> 1e141989b6360ae9b8ffd12b4be9fa3023103171
 @app.post("/reset")
 def reset():
     global current_obs, current_email
