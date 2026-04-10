@@ -19,9 +19,10 @@ except ImportError:
     sys.exit(1)
 
 # Environment variables with defaults
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
+API_BASE_URL = os.getenv("API_BASE_URL", "<your-active-endpoint>")
+MODEL_NAME = os.getenv("MODEL_NAME", "<your-active-model>")
 HF_TOKEN = os.getenv("HF_TOKEN")
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 
 # Email classification labels
 LABELS = ["spam", "urgent", "informational", "followup", "archive"]
@@ -44,12 +45,21 @@ Sender Domain: {sender_domain}
 Respond with ONLY the category name in lowercase, nothing else.
 """
 
-def validate_environment():
+def log_start(task: str) -> None:
+    print(f"START: {task}")
+
+
+def log_step(message: str) -> None:
+    print(f"STEP: {message}")
+
+
+def log_end(task: str) -> None:
+    print(f"END: {task}")
+
+
+def validate_environment() -> bool:
     """Validate required environment variables"""
     errors = []
-
-    if not HF_TOKEN:
-        errors.append("HF_TOKEN environment variable is required")
 
     if not API_BASE_URL:
         errors.append("API_BASE_URL environment variable is required")
@@ -57,19 +67,36 @@ def validate_environment():
     if not MODEL_NAME:
         errors.append("MODEL_NAME environment variable is required")
 
+    if not HF_TOKEN and not LOCAL_IMAGE_NAME:
+        errors.append("HF_TOKEN environment variable is required unless LOCAL_IMAGE_NAME is used with from_docker_image().")
+
+    if LOCAL_IMAGE_NAME and not hasattr(OpenAI, "from_docker_image"):
+        if not HF_TOKEN:
+            errors.append("LOCAL_IMAGE_NAME is set but OpenAI.from_docker_image() is unavailable; HF_TOKEN is required to use the API client.")
+
     if errors:
-        print("Environment validation failed:")
+        log_step("Environment validation failed")
         for error in errors:
-            print(f"  - {error}")
+            log_step(f"{error}")
         return False
 
-    print("✓ Environment variables validated")
+    log_step("Environment variables validated")
     return True
 
+
 def create_openai_client() -> OpenAI:
-    """Create OpenAI client with custom base URL"""
+    """Create OpenAI client with custom base URL or Docker image."""
+    if LOCAL_IMAGE_NAME and hasattr(OpenAI, "from_docker_image"):
+        log_step(f"Creating OpenAI client from Docker image: {LOCAL_IMAGE_NAME}")
+        return OpenAI.from_docker_image(
+            image=LOCAL_IMAGE_NAME,
+            api_key=HF_TOKEN,
+            base_url=API_BASE_URL
+        )
+
+    log_step("Creating OpenAI client with API_BASE_URL and HF_TOKEN")
     return OpenAI(
-        api_key=HF_TOKEN,  # Using HF_TOKEN as API key
+        api_key=HF_TOKEN,
         base_url=API_BASE_URL
     )
 
@@ -107,7 +134,7 @@ def classify_email_with_openenv(client: OpenAI, email: Dict[str, Any]) -> tuple[
 
         # Validate prediction is in our labels
         if prediction not in LABELS:
-            print(f"Warning: LLM returned invalid label '{prediction}', defaulting to 'informational'")
+            log_step(f"Warning: LLM returned invalid label '{prediction}', defaulting to informational")
             prediction = "informational"
 
         # Create OpenEnv-compatible observation
@@ -144,7 +171,7 @@ def classify_email_with_openenv(client: OpenAI, email: Dict[str, Any]) -> tuple[
         return prediction, observation
 
     except Exception as e:
-        print(f"Error during LLM classification: {e}")
+        log_step(f"Error during LLM classification: {e}")
         return "informational", {}
 
 def get_default_email() -> Dict[str, Any]:
@@ -178,12 +205,15 @@ def main():
 
     args = parser.parse_args()
 
+    log_start("inference")
     # Validate environment
     if not validate_environment():
+        log_end("inference")
         sys.exit(1)
 
     if args.validate_only:
-        print("Environment validation successful")
+        log_step("Environment validation successful")
+        log_end("inference")
         return
 
     # Load email data
@@ -192,27 +222,30 @@ def main():
             with open(args.input_file, "r", encoding="utf-8") as f:
                 email = json.load(f)
         except Exception as e:
-            print(f"Error loading email from file: {e}")
+            log_step(f"Error loading email from file: {e}")
+            log_end("inference")
             sys.exit(1)
     elif args.email:
         try:
             email = json.loads(args.email)
         except Exception as e:
-            print(f"Error parsing email JSON: {e}")
+            log_step(f"Error parsing email JSON: {e}")
+            log_end("inference")
             sys.exit(1)
     else:
         email = get_default_email()
-        print("Using default test email...")
+        log_step("Using default test email")
 
     # Create OpenAI client
     try:
         client = create_openai_client()
     except Exception as e:
-        print(f"Error creating OpenAI client: {e}")
+        log_step(f"Error creating OpenAI client: {e}")
+        log_end("inference")
         sys.exit(1)
 
     # Classify email
-    print("Classifying email with LLM...")
+    log_step("Classifying email with LLM")
     prediction, observation = classify_email_with_openenv(client, email)
 
     # Prepare output
@@ -229,6 +262,7 @@ def main():
 
     # Print result
     print(json.dumps(output, indent=2))
+    log_end("inference")
 
 if __name__ == "__main__":
     main()
