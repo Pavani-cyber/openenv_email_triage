@@ -23,17 +23,17 @@ RUN pip install --upgrade pip && \
 COPY . .
 
 # ==========================
-# Expose Gradio port
+# Expose FastAPI port
 # ==========================
-EXPOSE 7860
+EXPOSE 8000
 
 # ==========================
 # Health check
 # ==========================
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import os; exit(0 if os.path.exists('inference.py') else 1)"
+    CMD python -c "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).status == 200 else 1)"
 
 # ==========================
-# Run inference script
+# Run FastAPI server
 # ==========================
-CMD ["python", "inference.py", "--validate-only"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
