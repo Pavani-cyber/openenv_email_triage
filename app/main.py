@@ -92,8 +92,7 @@ def get_state():
     }
 
 
-@app.get("/reset")
-@app.post("/reset")
+@app.api_route("/reset", methods=["GET", "POST"])
 def reset():
     global current_obs, current_email
     obs, info = env.reset()
